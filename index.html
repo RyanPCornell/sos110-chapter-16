@@ -1155,6 +1155,18 @@ svg.night .hi-curve{stroke:#e07a6f;}
 .cg .cg-imp td.cg-tg.gd{color:#3f6f3a; border-left:4px solid #4c7a46;}
 .cg .cg-imp td.cg-tg.bd{color:#a4373a; border-left:4px solid #a4373a;}
 .cg .cg-imp td.cg-tg.z{color:#8a7f6a; font-weight:600;}
+.cg .cg-why{display:inline-block; margin-top:4px; font:700 10.5px Inter; letter-spacing:.03em; color:#2f6f9a; background:#fffaf0; border:1px solid #c9d8e3; border-radius:999px; padding:2px 9px; cursor:pointer;}
+.cg .cg-why:hover,.cg .cg-why.on{background:#2f6f9a; color:#fff; border-color:#2f6f9a;}
+.cg .cg-imp tr.cg-whyrow td{background:#fffaf0; border:1px solid var(--line); text-align:left; padding:10px 14px; color:#2a2621;}
+.cg .cg-whyb p{margin:0 0 6px; font:400 12.5px/1.5 Merriweather,serif;}
+.cg .cg-whyb ul{margin:4px 0 8px; padding:0; list-style:none;}
+.cg .cg-whyb li{font:500 12px/1.45 Inter; padding:3px 0 3px 10px; border-left:3px solid #d8ccb0; margin:3px 0;}
+.cg .cg-whyb li.bd{border-left-color:#a4373a;}
+.cg .cg-whyb li.gd{border-left-color:#4c7a46;}
+.cg .cg-whyb li em{font-style:normal; font-weight:800; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; margin-left:4px;}
+.cg .cg-whyb li.bd em{color:#a4373a;}
+.cg .cg-whyb li.gd em{color:#3f6f3a;}
+.cg .cg-warn.ok{border-left-color:#4c7a46; color:#3f6f3a!important; background:#edf2e6;}
 /* ── the urban transition (ch16_transition.py) ── */
 .tr-inner{max-width:86rem; margin:0 auto; width:100%;}
 .tr-head{margin-bottom:.4rem;}
@@ -3306,8 +3318,8 @@ const SIM = (() => {
       ugb: s >= 2 && B(2) === 0, afford: s >= 2 && B(2) === 1, extend: s >= 2 && B(2) === 2,
     };
     const sh = (id, k) => yr > (EVENTS.find(e => e.id === id) || {}).y ? respShare(I, id, k) : 0;
-    // open desert that the planners developed: sprawl at the edge
-    const devB = plan.map((cd, b) => !!(cd && M.initial[b] && M.initial[b][0] === 'N' && cd[0] !== 'N'));
+    // open desert that the planners developed: sprawl at the edge (a park keeps the land open, so it brings no new subdivisions)
+    const devB = plan.map((cd, b) => !!(cd && M.initial[b] && M.initial[b][0] === 'N' && cd[0] !== 'N' && cd[0] !== 'K'));
     const nDev = devB.filter(Boolean).length;
     // the city's blocks, with program upgrades layered on
     const xeri = new Set(); if (yr > 2039 && I.R && I.R.water) Object.keys(I.R.water).forEach(pk => { if (chose(I, 'water', pk) === 'xeri') ((I.assign || {})[pk] || []).forEach(x => xeri.add(x)); });
@@ -4437,7 +4449,7 @@ const UI = (() => {
       body = `<div class="cg-wild"><div class="cg-eb">OPEN DESERT</div><p>This block is open Sonoran desert at the edge of the city.</p>
         <div class="cg-wchoice"><button class="cg-wbtn${keep ? ' on' : ''}" data-wild="keep"><b>Keep it wild</b><span>Free. Habitat for birds and wildlife; holds soil and soaks up rain.</span></button>
         <button class="cg-wbtn${keep ? '' : ' on dev'}" data-wild="dev"><b>Develop it</b><span>Build here, plus $${SIM.NEW_ROADS}M for new roads, water and sewer.</span></button></div>
-        ${keep ? '' : `<p class="cg-warn"><b>Developing the edge:</b> it paves habitat, its residents drive about a third farther, and new roads invite more subdivisions farther out into the desert. The whole class will see it in the next report.</p>`}</div>`;
+        ${keep ? '' : cur.u === 'K' ? `<p class="cg-warn ok"><b>A park at the edge:</b> it keeps the land open, so no new subdivisions follow, though lawns and paths replace some desert habitat.</p>` : `<p class="cg-warn"><b>Developing the edge:</b> it paves habitat, its residents drive about a third farther, and new roads invite more subdivisions farther out into the desert. The whole class will see it in the next report.</p>`}</div>`;
       if (!keep) body += useButtons(bp, cur, b, W) + editorBits(cur);
     } else if (s === 0 || d.mode[curBlock] === 'rebuild') {
       body = (s > 0 ? `<div class="cg-rebuild"><b>Bulldoze and rebuild</b> <button class="cg-b ghost" data-mode="cards">Back to upgrades</button></div>` : '') + useButtons(bp, cur, b, W) + editorBits(cur);
@@ -4732,7 +4744,7 @@ const UI = (() => {
     // developing the open desert, in any session
     { const X = clone(); let n = 0;
       for (let k = 0; k < 3; k++) Object.keys(X.D[k] || {}).forEach(pk => { const bl = A[pk] || [], cs = String(X.D[k][pk]).split('|'); X.D[k][pk] = bl.map((b, i) => { if (isWild(b) && cs[i] && String(cs[i])[0] !== 'N') { n++; return M.initial[b]; } return cs[i]; }).join('|'); });
-      const dev = W.rec.nDev || 0;
+      const dev = W.rec.plan.filter((cd, b) => isWild(b) && cd && cd[0] !== 'N').length;
       rowsOut.splice(1, 0, { t: 'Developing the open desert', sub: dev + ' desert block' + (dev === 1 ? '' : 's') + ' built on', rec: n ? end(X) : null, det: n ? 'desert' : '' }); }
     { const X = clone(); X.R = {}; const any = Object.keys(I.R || {}).length;
       rowsOut.push({ t: 'Responses to the news', sub: 'what planners paid for as events hit', rec: any ? end(X) : null, det: any ? 'resp' : '' }); }
@@ -4788,7 +4800,7 @@ const UI = (() => {
           if (det === 'desert' ? !(isWild(b) && String(cs[i])[0] !== 'N') : isWild(b)) return;
           ch.push({ k, pk, i, b, lab: det === 'desert' ? 'Open desert → ' + SIM.USES[SIM.parse(cs[i]).u].short : changeLabel(pv, cs[i]) }); }); }));
       const groups = {}; ch.forEach(c => { (groups[c.lab] = groups[c.lab] || []).push(c); });
-      const undo = list => end(undoChanges(clone(), list.map(c => ({ k: c.k, pk: c.pk, i: c.i, to: det === 'desert' ? M.initial[c.b] : prev(c.k, c.b) }))));
+      const undo = list => SIM.runAlt(undoChanges(clone(), list.map(c => ({ k: c.k, pk: c.pk, i: c.i, to: det === 'desert' ? M.initial[c.b] : prev(c.k, c.b) }))), SIM.YN);
       const keys = Object.keys(groups).sort((x, y) => groups[y].length - groups[x].length).slice(0, 9);
       const rows = keys.map(kk => ({ t: kk, sub: groups[kk].length + ' block' + (groups[kk].length === 1 ? '' : 's') + (groups[kk].some(c => mineSet.has(c.b)) ? ' · includes yours' : ''), run: () => undo(groups[kk]) }));
       const mineCh = ch.filter(c => mineSet.has(c.b));
@@ -4837,8 +4849,34 @@ const UI = (() => {
       return `<td class="cg-tg ${good ? 'gd' : 'bd'}"><span>${t[1]}</span>${v > 0 ? '+' : '−'}${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: t[2], maximumFractionDigits: t[2] })}${t[4]}</td>`;
     };
     return `<table class="cg-imp"><tr><th>${d.first}</th>${hasT ? '<th>What it was aimed at</th>' : ''}${cols.map(m => `<th>${m.t.replace('Fine-particle pollution', 'Air pollution').replace('Hours stuck in traffic', 'Traffic')}</th>`).join('')}</tr>
-      ${d.rows.map(x => `<tr${x.mine ? ' class="mine"' : ''}><td class="cg-it"><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></td>${hasT ? tcell(x) : ''}${cols.map(m => cell(m, x)).join('')}</tr>`).join('')}</table>
+      ${d.rows.map((x, j) => { const fewer = x.rec && x.hist && r.people - x.rec.people <= -.5;
+        return `<tr${x.mine ? ' class="mine"' : ''}><td class="cg-it"><b>${esc(x.t)}</b><span>${esc(x.sub)}</span>${fewer ? `<button class="cg-why${d.whyOpen === j ? ' on' : ''}" data-why="${j}">${d.whyOpen === j ? 'Hide' : 'Why fewer residents?'}</button>` : ''}</td>${hasT ? tcell(x) : ''}${cols.map(m => cell(m, x)).join('')}</tr>` +
+          (fewer && d.whyOpen === j ? `<tr class="cg-whyrow"><td colspan="${1 + (hasT ? 1 : 0) + cols.length}">${whyFewer(W, x)}</td></tr>` : ''); }).join('')}</table>
       <p class="cg-rp cg-units">Heat island in °F at night · traffic in hours a year per commuter · air in µg/m³ of fine particles · residents and jobs in people. Shading compares each change with the biggest one in its column.</p>`;
+  }
+  // why a change left fewer residents: people move to Riverbend each year in proportion to its pull (jobs, rent, traffic and
+  // the sustainability index, relative to 2026); add up each factor's share of the pull over the 30 years in both runs
+  function whyFewer(W, x) {
+    const F = [
+      ['delay', 'Traffic', p => -.0025 * p.delay, (a, b) => fmt(Math.abs(a.delay - b.delay), 1) + ' hours a year ' + (a.delay > b.delay ? 'more' : 'less') + ' stuck in traffic per commuter, on average over the 30 years'],
+      ['index', 'Sustainability index', p => .006 * p.index, (a, b) => (a.index > b.index ? 'up ' : 'down ') + fmt(Math.abs(a.index - b.index), 1) + ' points on average over the 30 years (the index scores the whole city, including desert habitat, heat, air and how far people drive)'],
+      ['rent', 'Rent', (p, b0) => -.45 * p.rent / b0.rent, (a, b) => 'rent index ' + (a.rent > b.rent ? 'up ' : 'down ') + fmt(Math.abs(a.rent - b.rent), 1) + ' on average over the 30 years'],
+      ['jobFill', 'Jobs', p => 1.2 * p.jobFill, (a, b) => (a.jobFill > b.jobFill ? 'up ' : 'down ') + fmt(Math.abs(a.jobFill - b.jobFill) * 100, 1) + ' points in the share of workers with a job in town, on average over the 30 years'],
+    ];
+    const H = W.hist, G = x.hist, n = Math.min(H.length, G.length), avg = (hs, f) => { let t = 0; for (let i = 0; i < n - 1; i++) t += f(hs[i], hs[0]); return t / Math.max(1, n - 1); };
+    const mean = (hs, k) => { let t = 0; for (let i = 0; i < n - 1; i++) t += +hs[i][k] || 0; return { [k]: t / Math.max(1, n - 1) }; };
+    const it = F.map(([k, name, term, say]) => {
+      const d = (avg(H, term) - term(H[0], H[0])) - (avg(G, term) - term(G[0], G[0]));
+      const a = Object.assign({}, mean(H, k)), b = Object.assign({}, mean(G, k));
+      const sg = (k === 'delay' || k === 'rent' ? -1 : 1) * (a[k] - b[k]), big = Math.abs(a[k] - b[k]) * (k === 'jobFill' ? 100 : 1) >= .05;
+      return { k, name, d, txt: say(a, b), ok: big && sg * d > 0 };
+    }).filter(f => f.ok && Math.abs(f.d) > 1e-4).sort((p, q) => Math.abs(q.d) - Math.abs(p.d));
+    const dr = W.rec.people - x.rec.people, room = W.rec.people >= W.rec.demandPop * .995 && x.rec.people >= x.rec.demandPop * .995;
+    const ex = W.rec.exurbHomes - x.rec.exurbHomes;
+    return `<div class="cg-whyb"><p><b>Why fewer residents?</b> In this model, residents are the people who choose to move to Riverbend. ${room ? 'The city had room for all of them (empty homes first, then new subdivisions at the edge), so building homes does not add residents by itself.' : 'Riverbend was short of homes, so new homes do let more people stay, but that is only part of the story.'} What decides how many come is how attractive the city is each year: jobs, rent, traffic and the sustainability index.</p>
+      <ul>${it.map(f => `<li class="${f.d < 0 ? 'bd' : 'gd'}"><b>${f.name}</b>: ${f.txt}. <em>${f.d < 0 ? 'Kept people away' : 'Drew people in'}</em></li>`).join('')}
+      ${ex > 20 ? `<li class="bd"><b>Leapfrog growth</b>: new roads to the desert opened land farther out, and about ${fmt(ex)} more homes were built in subdivisions beyond the city. Their residents drive farther, which adds to traffic.</li>` : ''}</ul>
+      <p>Added up, the losses outweighed the gains, so about <b>${fmt(Math.abs(dr))} fewer people</b> lived in Riverbend by ${SIM.YN}.</p></div>`;
   }
   let detRun = 0;
   function openDetail(det) {
@@ -4848,6 +4886,7 @@ const UI = (() => {
     const paint = () => { body.innerHTML = `<div class="cg-eb">WHAT YOUR CHOICES DID</div><h3 class="cg-dt">${d.title}</h3><p class="cg-rp">${d.intro}
         <span class="cg-key"><i class="g"></i>better <i class="b"></i>worse <i class="n"></i>more people · no change</span></p>${d.rows.length ? detTable(d, W) : '<p>Nothing to show.</p>'}`; };
     paint();
+    body.onclick = e => { const w = e.target.closest('[data-why]'); if (!w || my !== detRun) return; const j = +w.dataset.why; d.whyOpen = d.whyOpen === j ? null : j; paint(); };
     let i = 0;
     const nextRow = () => { if (my !== detRun || m.hidden) return; while (i < d.rows.length && d.rows[i].rec) i++; if (i >= d.rows.length) return; { const res = d.rows[i].run(); if (res && res.hist) { d.rows[i].rec = res.rec; d.rows[i].hist = res.hist; } else d.rows[i].rec = res; } i++; paint(); setTimeout(nextRow, 15); };
     setTimeout(nextRow, 30);
